@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist Creator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f8;
+    color: #222;
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 18px 24px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+header p {
+    margin: 5px 0 0;
+    color: #cbd5e1;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 18px;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+button {
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 14px;
+    background: #2563eb;
+    color: white;
+}
+
+button:hover {
+    opacity: .9;
+}
+
+button.secondary {
+    background: #64748b;
+}
+
+button.green {
+    background: #16a34a;
+}
+
+button.red {
+    background: #dc2626;
+}
+
+button.dark {
+    background: #111827;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.07);
+    margin-bottom: 20px;
+}
+
+.title-input {
+    width: 100%;
+    border: 0;
+    font-size: 30px;
+    font-weight: bold;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+.description-input {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    padding: 10px;
+    resize: vertical;
+    min-height: 70px;
+}
+
+.section {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 18px;
+}
+
+.section-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.section-title {
+    flex: 1;
+    font-size: 20px;
+    font-weight: bold;
+    border: 0;
+    outline: none;
+}
+
+.section-description {
+    width: 100%;
+    margin-top: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px;
+    resize: vertical;
+}
+
+.task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+}
+
+.task input[type="text"] {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    outline: none;
+}
+
+.task input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.task button {
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+.add-task {
+    margin-top: 12px;
+    background: #475569;
+}
+
+.section-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.saved-list {
+    display: grid;
+    gap: 10px;
+}
+
+.saved-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.saved-item strong {
+    flex: 1;
+}
+
+.empty {
+    color: #64748b;
+    padding: 15px 0;
+}
+
+.status {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #111827;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 7px;
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .title-input {
+        font-size: 24px;
+    }
+
+    .saved-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media print {
+    body {
+        background: white;
+    }
+
+    header,
+    .toolbar,
+    .saved-card,
+    .editor-only {
+        display: none !important;
+    }
+
+    .container {
+        margin: 0;
+        max-width: none;
+    }
+
+    .card {
+        box-shadow: none;
+    }
+
+    input,
+    textarea {
+        border: 0 !important;
+    }
+
+    .section {
+        break-inside: avoid;
+    }
+
+    .task button {
+        display: none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Checklist Creator</h1>
+    <p>Crea, guarda y comparte tus checklists.</p>
+</header>
+
+<div class="container">
+
+    <div class="toolbar editor-only">
+        <button onclick="newChecklist()">Nueva checklist</button>
+        <button onclick="addSection()">+ Sección</button>
+        <button class="green" onclick="saveChecklist()">Guardar</button>
+        <button class="secondary" onclick="shareChecklist()">Compartir</button>
+        <button class="dark" onclick="downloadHTML()">Descargar HTML</button>
+        <button class="secondary" onclick="window.print()">Guardar como PDF</button>
+    </div>
+
+    <div class="card">
+        <input
+            id="checklistTitle"
+            class="title-input"
+            placeholder="Título de la checklist"
+            oninput="autoSave()"
+        >
+
+        <textarea
+            id="checklistDescription"
+            class="description-input"
+            placeholder="Descripción..."
+            oninput="autoSave()"
+        ></textarea>
+
+        <div id="sections"></div>
+    </div>
+
+    <div class="card saved-card">
+        <h2>Mis checklists</h2>
+        <p>Se guardan solamente en este navegador.</p>
+
+        <div id="savedList" class="saved-list"></div>
+    </div>
+
+</div>
+
+<div id="status" class="status"></div>
+
+<script>
+let checklist = {
+    id: null,
+    title: "Mi checklist",
+    description: "",
+    sections: [
+        {
+            id: generateId(),
+            title: "Nueva sección",
+            description: "",
+            tasks: [
+                {
+                    id: generateId(),
+                    text: "Primera tarea",
+                    checked: false
+                }
+            ]
+        }
+    ]
+};
+
+let saveTimer = null;
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+function escapeHTML(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function render() {
+    document.getElementById("checklistTitle").value =
+        checklist.title || "";
+
+    document.getElementById("checklistDescription").value =
+        checklist.description || "";
+
+    const container = document.getElementById("sections");
+    container.innerHTML = "";
+
+    checklist.sections.forEach((section, sectionIndex) => {
+
+        const sectionElement = document.createElement("div");
+        sectionElement.className = "section";
+
+        sectionElement.innerHTML = `
+            <div class="section-header">
+                <input
+                    class="section-title"
+                    value="${escapeHTML(section.title)}"
+                    placeholder="Título de sección"
+                    oninput="updateSectionTitle('${section.id}', this.value)"
+                >
+
+                <div class="section-actions editor-only">
+                    <button class="secondary"
+                        onclick="moveSection('${section.id}', -1)">
+                        ↑
+                    </button>
+
+                    <button class="secondary"
+                        onclick="moveSection('${section.id}', 1)">
+                        ↓
+                    </button>
+
+                    <button class="red"
+                        onclick="deleteSection('${section.id}')">
+                        ×
+                    </button>
+                </div>
+            </div>
+
+            <textarea
+                class="section-description"
+                placeholder="Descripción de la sección..."
+                oninput="updateSectionDescription('${section.id}', this.value)"
+            >${escapeHTML(section.description || "")}</textarea>
+
+            <div class="tasks">
+                ${section.tasks.map(task => `
+                    <div class="task">
+                        <input
+                            type="checkbox"
+                            ${task.checked ? "checked" : ""}
+                            onchange="toggleTask('${section.id}', '${task.id}', this.checked)"
+                        >
+
+                        <input
+                            type="text"
+                            value="${escapeHTML(task.text)}"
+                            placeholder="Escribe una tarea..."
+                            oninput="updateTask('${section.id}', '${task.id}', this.value)"
+                        >
+
+                        <button
+                            class="red editor-only"
+                            onclick="deleteTask('${section.id}', '${task.id}')">
+                            ×
+                        </button>
+                    </div>
+                `).join("")}
+            </div>
+
+            <button
+                class="add-task editor-only"
+                onclick="addTask('${section.id}')">
+                + Añadir tarea
+            </button>
+        `;
+
+        container.appendChild(sectionElement);
+    });
+}
+
+function updateSectionTitle(sectionId, value) {
+    const section = checklist.sections.find(s => s.id === sectionId);
+    if (section) section.title = value;
+    autoSave();
+}
+
+function updateSectionDescription(sectionId, value) {
+    const section = checklist.sections.find(s => s.id === sectionId);
+    if (section) section.description = value;
+    autoSave();
+}
+
+function updateTask(sectionId, taskId, value) {
+    const section = checklist.sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    const task = section.tasks.find(t => t.id === taskId);
+
+    if (task) {
+        task.text = value;
+        autoSave();
+    }
+}
+
+function toggleTask(sectionId, taskId, checked) {
+    const section = checklist.sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    const task = section.tasks.find(t => t.id === taskId);
+
+    if (task) {
+        task.checked = checked;
+        autoSave();
+    }
+}
+
+function addSection() {
+    checklist.sections.push({
+        id: generateId(),
+        title: "Nueva sección",
+        description: "",
+        tasks: []
+    });
+
+    render();
+    autoSave();
+}
+
+function deleteSection(id) {
+    if (!confirm("¿Eliminar esta sección?")) return;
+
+    checklist.sections =
+        checklist.sections.filter(section => section.id !== id);
+
+    render();
+    autoSave();
+}
+
+function moveSection(id, direction) {
+    const index =
+        checklist.sections.findIndex(section => section.id === id);
+
+    const newIndex = index + direction;
+
+    if (newIndex < 0 || newIndex >= checklist.sections.length) return;
+
+    const temp = checklist.sections[index];
+
+    checklist.sections[index] =
+        checklist.sections[newIndex];
+
+    checklist.sections[newIndex] = temp;
+
+    render();
+    autoSave();
+}
+
+function addTask(sectionId) {
+    const section =
+        checklist.sections.find(s => s.id === sectionId);
+
+    if (!section) return;
+
+    section.tasks.push({
+        id: generateId(),
+        text: "Nueva tarea",
+        checked: false
+    });
+
+    render();
+    autoSave();
+}
+
+function deleteTask(sectionId, taskId) {
+    const section =
+        checklist.sections.find(s => s.id === sectionId);
+
+    if (!section) return;
+
+    section.tasks =
+        section.tasks.filter(task => task.id !== taskId);
+
+    render();
+    autoSave();
+}
+
+function newChecklist() {
+    if (!confirm("¿Crear una nueva checklist?")) return;
+
+    checklist = {
+        id: null,
+        title: "Nueva checklist",
+        description: "",
+        sections: []
+    };
+
+    render();
+}
+
+function getChecklists() {
+    try {
+        return JSON.parse(
+            localStorage.getItem("checklists") || "[]"
+        );
+    } catch {
+        return [];
+    }
+}
+
+function saveChecklist(showMessage = true) {
+
+    checklist.title =
+        document.getElementById("checklistTitle").value;
+
+    checklist.description =
+        document.getElementById("checklistDescription").value;
+
+    if (!checklist.id) {
+        checklist.id = generateId();
+    }
+
+    let saved = getChecklists();
+
+    const index =
+        saved.findIndex(item => item.id === checklist.id);
+
+    const copy = JSON.parse(JSON.stringify(checklist));
+
+    if (index >= 0) {
+        saved[index] = copy;
+    } else {
+        saved.push(copy);
+    }
+
+    localStorage.setItem(
+        "checklists",
+        JSON.stringify(saved)
+    );
+
+    renderSavedList();
+
+    if (showMessage) {
+        showStatus("Checklist guardada");
+    }
+}
+
+function autoSave() {
+    clearTimeout(saveTimer);
+
+    saveTimer = setTimeout(() => {
+        saveChecklist(false);
+    }, 500);
+}
+
+function renderSavedList() {
+    const list = document.getElementById("savedList");
+    const saved = getChecklists();
+
+    if (!saved.length) {
+        list.innerHTML =
+            '<div class="empty">Todavía no tienes checklists guardadas.</div>';
+        return;
+    }
+
+    list.innerHTML = saved.map(item => `
+        <div class="saved-item">
+            <strong>${escapeHTML(item.title || "Sin título")}</strong>
+
+            <button onclick="loadChecklist('${item.id}')">
+                Abrir
+            </button>
+
+            <button class="red" onclick="removeChecklist('${item.id}')">
+                Eliminar
+            </button>
+        </div>
+    `).join("");
+}
+
+function loadChecklist(id) {
+    const saved = getChecklists();
+
+    const found = saved.find(item => item.id === id);
+
+    if (!found) return;
+
+    checklist =
+        JSON.parse(JSON.stringify(found));
+
+    render();
+
+    showStatus("Checklist cargada");
+}
+
+function removeChecklist(id) {
+    if (!confirm("¿Eliminar esta checklist guardada?")) return;
+
+    let saved = getChecklists();
+
+    saved = saved.filter(item => item.id !== id);
+
+    localStorage.setItem(
+        "checklists",
+        JSON.stringify(saved)
+    );
+
+    renderSavedList();
+}
+
+function shareChecklist() {
+
+    checklist.title =
+        document.getElementById("checklistTitle").value;
+
+    checklist.description =
+        document.getElementById("checklistDescription").value;
+
+    const json =
+        JSON.stringify(checklist);
+
+    const encoded =
+        encodeURIComponent(
+            btoa(unescape(encodeURIComponent(json)))
+        );
+
+    const url =
+        location.origin +
+        location.pathname +
+        "?checklist=" +
+        encoded;
+
+    navigator.clipboard.writeText(url)
+        .then(() => {
+            showStatus("Enlace copiado al portapapeles");
+        })
+        .catch(() => {
+            prompt(
+                "Copia este enlace para compartir la checklist:",
+                url
+            );
+        });
+}
+
+function loadFromURL() {
+
+    const params =
+        new URLSearchParams(location.search);
+
+    const data =
+        params.get("checklist");
+
+    if (!data) return;
+
+    try {
+
+        const json =
+            decodeURIComponent(
+                atob(decodeURIComponent(data))
+            );
+
+        const imported =
+            JSON.parse(json);
+
+        if (
+            imported &&
+            typeof imported === "object" &&
+            Array.isArray(imported.sections)
+        ) {
+            checklist = imported;
+            render();
+
+            showStatus("Checklist compartida cargada");
+        }
+
+    } catch (error) {
+        console.error(error);
+        showStatus("No se pudo cargar la checklist");
+    }
+}
+
+function downloadHTML() {
+
+    checklist.title =
+        document.getElementById("checklistTitle").value;
+
+    checklist.description =
+        document.getElementById("checklistDescription").value;
+
+    const html = createStandaloneHTML(checklist);
+
+    const blob =
+        new Blob([html], {
+            type: "text/html;charset=utf-8"
+        });
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+        sanitizeFilename(checklist.title || "checklist")
+        + ".html";
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    showStatus("HTML descargado");
+}
+
+function sanitizeFilename(name) {
+    return name
+        .replace(/[<>:"/\\|?*]/g, "")
+        .replace(/\s+/g, "-")
+        .substring(0, 80);
+}
+
+function createStandaloneHTML(data) {
+
+    const sections =
+        data.sections.map(section => {
+
+            const tasks =
+                section.tasks.map(task => `
+                    <label>
+                        <input
+                            type="checkbox"
+                            ${task.checked ? "checked" : ""}
+                        >
+                        ${escapeHTML(task.text)}
+                    </label>
+                `).join("<br>");
+
+            return `
+                <section>
+                    <h2>${escapeHTML(section.title)}</h2>
+                    <p>${escapeHTML(section.description || "")}</p>
+                    ${tasks}
+                </section>
+            `;
+
+        }).join("");
+
+    return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHTML(data.title)}</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #222;
+}
+
+section {
+    margin-top: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+}
+
+label {
+    line-height: 2;
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>${escapeHTML(data.title)}</h1>
+
+<p>${escapeHTML(data.description || "")}</p>
+
+${sections}
+
+</body>
+</html>`;
+}
+
+function showStatus(message) {
+    const status =
+        document.getElementById("status");
+
+    status.textContent = message;
+    status.style.display = "block";
+
+    setTimeout(() => {
+        status.style.display = "none";
+    }, 2500);
+}
+
+document
+    .getElementById("checklistTitle")
+    .addEventListener("input", function() {
+        checklist.title = this.value;
+        autoSave();
+    });
+
+document
+    .getElementById("checklistDescription")
+    .addEventListener("input", function() {
+        checklist.description = this.value;
+        autoSave();
+    });
+
+render();
+renderSavedList();
+loadFromURL();
+</script>
+
+</body>
+</html>
