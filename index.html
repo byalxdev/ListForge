@@ -297,8 +297,8 @@ button.dark {
     </div>
 
     <div class="card saved-card">
-        <h2>Mis checklists</h2>
-        <p>Se guardan solamente en este navegador.</p>
+        <h2>My Cheklist</h2>
+        <p>It only saves in this browser.</p>
 
         <div id="savedList" class="saved-list"></div>
     </div>
@@ -310,17 +310,17 @@ button.dark {
 <script>
 let checklist = {
     id: null,
-    title: "Mi checklist",
+    title: "My checklist",
     description: "",
     sections: [
         {
             id: generateId(),
-            title: "Nueva sección",
+            title: "Nev section",
             description: "",
             tasks: [
                 {
                     id: generateId(),
-                    text: "Primera tarea",
+                    text: "First task",
                     checked: false
                 }
             ]
@@ -680,11 +680,11 @@ function shareChecklist() {
 
     navigator.clipboard.writeText(url)
         .then(() => {
-            showStatus("Enlace copiado al portapapeles");
+            showStatus("Link copied");
         })
         .catch(() => {
             prompt(
-                "Copia este enlace para compartir la checklist:",
+                "Copy this URL to share this list:",
                 url
             );
         });
@@ -718,12 +718,12 @@ function loadFromURL() {
             checklist = imported;
             render();
 
-            showStatus("Checklist compartida cargada");
+            showStatus("Shared Checklist Loaded");
         }
 
     } catch (error) {
         console.error(error);
-        showStatus("No se pudo cargar la checklist");
+        showStatus("Error");
     }
 }
 
